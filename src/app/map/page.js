@@ -1,8 +1,7 @@
 'use client'
 import React from 'react';
-import MapboxExample from '../../components/Map';
-import PropertyMap from '../../components/MapTX';
-import Box from '../../components/Box';
+import PropertyMap from '@/components/MapTX';
+import Box from '@/components/Box';
 // Import other components you want to display
 
 export default function MapPage() {
