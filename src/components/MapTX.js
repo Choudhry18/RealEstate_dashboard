@@ -20,7 +20,7 @@ const PropertyMap = () => {
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/streets-v12', // You can change the style
       center: [-97.7431, 30.2672], // Center of Texas
-      zoom: 10 // Initial zoom level
+      zoom: 9 // Initial zoom level
     });
 
     // Add navigation controls
