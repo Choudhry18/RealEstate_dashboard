@@ -13,14 +13,14 @@ const PropertyMap = () => {
     // TO MAKE THE MAP APPEAR YOU MUST
     // ADD YOUR ACCESS TOKEN FROM
     // https://account.mapbox.com
-    mapboxgl.accessToken = 'pk.eyJ1IjoiY2hvdWRocnkxOCIsImEiOiJjbThnbTZtYmYwb2ZvMmtvdmZ5MG1paGF3In0.O9Bmfw2_wQos-OSBr6uBWw';
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOXGLACCESS_TOKEN;
 
     // Initialize the map
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11', // You can change the style
-      center: [-99.9018, 31.9686], // Center of Texas
-      zoom: 5
+      style: 'mapbox://styles/mapbox/streets-v12', // You can change the style
+      center: [-97.7431, 30.2672], // Center of Texas
+      zoom: 10 // Initial zoom level
     });
 
     // Add navigation controls
@@ -31,7 +31,8 @@ const PropertyMap = () => {
       // Add your tileset as a source
       mapRef.current.addSource('properties', {
         type: 'vector',
-        url: 'mapbox://choudhry18.dxbp404b' // Replace with your actual tileset ID
+        url: `mapbox://${process.env.NEXT_PUBLIC_TX_MAPBOX}`
+        // Replace with your actual tileset ID
       });
 
       // Add a layer to display the properties
