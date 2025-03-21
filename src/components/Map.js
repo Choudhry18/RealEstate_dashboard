@@ -25,6 +25,35 @@ const PropertyMap = () => {
       sourceLayer: 'Ohio_mapbox-5pn39x', // Replace with actual Ohio source layer
     }
   };
+    // Function to handle AI interaction
+    const askAIAboutProperty = (question, propertyData, chatElement) => {
+      // Show loading indicator
+      chatElement.innerHTML += `<div class="ai-message-loading">AI is thinking...</div>`;
+      
+      // Mock AI response for demo purposes
+      // Replace this with your actual AI service implementation
+      setTimeout(() => {
+        // Remove loading indicator
+        chatElement.removeChild(chatElement.lastChild);
+        
+        // Generate a property-specific response
+        let aiResponse = '';
+        if (question.toLowerCase().includes('price')) {
+          aiResponse = `This property is priced at $${propertyData.price || 'N/A'}, which is ${Math.random() > 0.5 ? 'above' : 'below'} the average for this area.`;
+        } else if (question.toLowerCase().includes('location')) {
+          aiResponse = `This property is located in a ${Math.random() > 0.5 ? 'high demand' : 'growing'} neighborhood with good access to amenities.`;
+        } else if (question.toLowerCase().includes('invest')) {
+          aiResponse = `Based on recent trends, this area has shown ${Math.random() > 0.5 ? 'strong' : 'moderate'} appreciation in property values.`;
+        } else {
+          aiResponse = `This property has interesting features. I recommend visiting for a full assessment.`;
+        }
+        
+        // Display AI response
+        chatElement.innerHTML += `<div class="ai-message">AI: ${aiResponse}</div>`;
+        
+        // Scroll to bottom of chat
+        chatElement.scrollTop = chatElement.scrollHeight;
+      }, 1000);};
 
   // Function to update map based on selected state
   const updateMap = () => {
@@ -82,9 +111,9 @@ const PropertyMap = () => {
       
       // Create popup content using your CSV properties
       const popupContent = `
-        <h3>${properties.name || 'Property'}</h3>
-        <p>Price: $${properties.price || 'N/A'}</p>
-        <p>Bedrooms: ${properties.bedrooms || 'N/A'}</p>
+        <h3>${properties.title || properties.Name || 'Property Details'}</h3>
+        <p>Address: ${properties.Address || 'N/A'}</p>
+        <p>Levels: ${properties.Level || 'N/A'}</p>
       `;
       
       // Display the popup
@@ -100,11 +129,88 @@ const PropertyMap = () => {
       popupRef.current.remove();
     });
 
-    // Add click interaction
-    mapRef.current.on('click', 'property-points', (e) => {
-      const properties = e.features[0].properties;
-      console.log('Property clicked:', properties);
-    });
+   // Add click interaction with AI-powered popup
+   mapRef.current.on('click', 'property-points', (e) => {
+    // Get coordinates and properties
+    const coordinates = e.features[0].geometry.coordinates.slice();
+    const properties = e.features[0].properties;
+
+    console.log(properties);
+    
+    // Ensure that if the map is zoomed out such that multiple
+    // copies of the feature are visible, the popup appears
+    // over the copy being pointed to.
+    if (['mercator', 'equirectangular'].includes(mapRef.current.getProjection().name)) {
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+    }
+    
+    // Create popup content with property info and AI chat interface
+    const popupContent = document.createElement('div');
+    
+    // Add property details section
+    const propertyDetails = document.createElement('div');
+    propertyDetails.innerHTML = `
+      <h3>${properties.title || properties.Name || 'Property Details'}</h3>
+      <p>Address: ${properties.Address || 'N/A'}</p>
+      <p>Levels: ${properties.Level || 'N/A'}</p>
+      <p>Year Built: ${properties.YearBuilt || 'N/A'}</p>
+    `;
+    
+    // Generate a unique ID for this property
+    const propertyId = properties.id || Math.random().toString(36).substring(2, 9);
+    
+    // Add AI chat interface
+    const aiChat = document.createElement('div');
+    aiChat.className = 'ai-chat-container';
+    aiChat.innerHTML = `
+      <div class="chat-messages" id="chat-messages-${propertyId}"></div>
+      <div class="chat-input">
+        <input type="text" id="ai-question-${propertyId}" 
+          placeholder="Ask AI about this property...">
+        <button id="ai-submit-${propertyId}">Ask</button>
+      </div>
+    `;
+    
+    // Append both sections to popup content
+    popupContent.appendChild(propertyDetails);
+    popupContent.appendChild(aiChat);
+    
+    // Create and display the popup
+    const popup = new mapboxgl.Popup({ maxWidth: '400px' })
+      .setLngLat(coordinates)
+      .setDOMContent(popupContent)
+      .addTo(mapRef.current);
+    
+    // Add event listener for the AI question submission
+    setTimeout(() => {
+      const submitButton = document.getElementById(`ai-submit-${propertyId}`);
+      const questionInput = document.getElementById(`ai-question-${propertyId}`);
+      const chatMessages = document.getElementById(`chat-messages-${propertyId}`);
+      
+      if (submitButton && questionInput && chatMessages) {
+        submitButton.addEventListener('click', () => {
+          const question = questionInput.value.trim();
+          if (question) {
+            // Display user question
+            chatMessages.innerHTML += `<div class="user-message">You: ${question}</div>`;
+            questionInput.value = '';
+            
+            // Call your AI service with the question and property data
+            askAIAboutProperty(question, properties, chatMessages);
+          }
+        });
+        
+        // Allow pressing Enter to submit
+        questionInput.addEventListener('keypress', (event) => {
+          if (event.key === 'Enter') {
+            submitButton.click();
+          }
+        });
+      }
+    }, 100);
+  });
   };
 
   useEffect(() => {
