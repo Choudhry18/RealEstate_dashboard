@@ -23,26 +23,28 @@ const Grid = () => {
           </div>
         </Link>
 
-        {/* City-wise Lease Up Time */}
+        {/* Area by Submarket */}
         <Link href="/analytics" className="block transform transition-transform hover:scale-105">
           <div className="bg-gray-900 rounded-xl shadow-2xl overflow-hidden h-80">
             <div className="p-6 flex flex-col h-full">
-              <h3 className="text-2xl font-bold text-white mb-3">City-wise Lease Up Time</h3>
+              <h3 className="text-2xl font-bold text-white mb-3">Area by Submarket</h3>
               <div className="flex-grow bg-gray-800 rounded-lg flex items-center justify-center p-4">
+                {/* Updated to pie chart SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 11v6m0 0l-3-3m3 3l3-3" />
+                  <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 2a10 10 0 0110 10M12 2v10h10" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 12l-6 6" />
                 </svg>
               </div>
               <p className="text-gray-300 mt-3">
-                Compare lease-up times across different metropolitan areas
+                Analyze area distribution by submarkets with interactive filters
               </p>
             </div>
           </div>
         </Link>
 
         {/* Year Built Distribution */}
-        <Link href="/trends" className="block transform transition-transform hover:scale-105">
+        <Link href="/year_built" className="block transform transition-transform hover:scale-105">
           <div className="bg-gray-900 rounded-xl shadow-2xl overflow-hidden h-80">
             <div className="p-6 flex flex-col h-full">
               <h3 className="text-2xl font-bold text-white mb-3">Year Built Distribution</h3>
@@ -62,14 +64,21 @@ const Grid = () => {
         <Link href="/values" className="block transform transition-transform hover:scale-105">
           <div className="bg-gray-900 rounded-xl shadow-2xl overflow-hidden h-80">
             <div className="p-6 flex flex-col h-full">
-              <h3 className="text-2xl font-bold text-white mb-3">Property Value Analysis</h3>
+              <h3 className="text-2xl font-bold text-white mb-3">Property Rent Analysis</h3>
               <div className="flex-grow bg-gray-800 rounded-lg flex items-center justify-center p-4">
+                {/* Updated to a line graph SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  {/* Horizontal axis */}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 20h18" />
+                  {/* Vertical axis */}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v16" />
+                  {/* Line graph trend */}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4-6 4 2 4-4 4-4" />
+
                 </svg>
               </div>
               <p className="text-gray-300 mt-3">
-                Review property valuations and investment metrics
+                Review property Rent Growth patterns
               </p>
             </div>
           </div>
