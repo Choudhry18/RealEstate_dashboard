@@ -26,34 +26,45 @@ const PropertyMap = () => {
     }
   };
     // Function to handle AI interaction
-    const askAIAboutProperty = (question, propertyData, chatElement) => {
-      // Show loading indicator
-      chatElement.innerHTML += `<div class="ai-message-loading">AI is thinking...</div>`;
-      
-      // Mock AI response for demo purposes
-      // Replace this with your actual AI service implementation
-      setTimeout(() => {
-        // Remove loading indicator
-        chatElement.removeChild(chatElement.lastChild);
+    const askAIAboutProperty = async (question, propertyData, chatElement) => {
+      try{
+                // Show loading indicator
+        chatElement.innerHTML += `<div class="ai-message-loading">AI is thinking...</div>`;
         
-        // Generate a property-specific response
-        let aiResponse = '';
-        if (question.toLowerCase().includes('price')) {
-          aiResponse = `This property is priced at $${propertyData.price || 'N/A'}, which is ${Math.random() > 0.5 ? 'above' : 'below'} the average for this area.`;
-        } else if (question.toLowerCase().includes('location')) {
-          aiResponse = `This property is located in a ${Math.random() > 0.5 ? 'high demand' : 'growing'} neighborhood with good access to amenities.`;
-        } else if (question.toLowerCase().includes('invest')) {
-          aiResponse = `Based on recent trends, this area has shown ${Math.random() > 0.5 ? 'strong' : 'moderate'} appreciation in property values.`;
-        } else {
-          aiResponse = `This property has interesting features. I recommend visiting for a full assessment.`;
+        // Call your API endpoint
+        const response = await fetch('/api/property-insights', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ question, propertyData }),
+        });
+        
+        // Remove loading indicator
+        const loadingElement = chatElement.querySelector('.ai-message-loading');
+        if (loadingElement) {
+          chatElement.removeChild(loadingElement);
         }
         
+        if (!response.ok) {
+          throw new Error('Failed to get AI insights');
+        }
+        
+        const data = await response.json();
         // Display AI response
-        chatElement.innerHTML += `<div class="ai-message">AI: ${aiResponse}</div>`;
+        chatElement.innerHTML += `<div class="ai-message">AI: ${data.response}</div>`;
+
         
         // Scroll to bottom of chat
-        chatElement.scrollTop = chatElement.scrollHeight;
-      }, 1000);};
+      } catch(error){
+        console.error('AI error:', error);
+        chatElement.innerHTML += `<div class="ai-message">AI: Failed to get insights for this property.</div>`;
+      }
+      // Show loading indicator
+      chatElement.scrollTop = chatElement.scrollHeight;
+      
+      // Mock AI response for demo purposes
+};
 
   // Function to update map based on selected state
   const updateMap = () => {
@@ -134,8 +145,6 @@ const PropertyMap = () => {
     // Get coordinates and properties
     const coordinates = e.features[0].geometry.coordinates.slice();
     const properties = e.features[0].properties;
-
-    console.log(properties);
     
     // Ensure that if the map is zoomed out such that multiple
     // copies of the feature are visible, the popup appears
@@ -255,6 +264,12 @@ const PropertyMap = () => {
 
       // Add event listeners
       addEventListeners();
+
+      // Initialize OpenAI client
+      const llm = new ChatOpenAI({
+        modelName: "gpt-4o-mini",
+        temperature: 0.2,
+      });
     });
 
     // Clean up on unmount
@@ -305,5 +320,6 @@ const PropertyMap = () => {
     </div>
   );
 };
+
 
 export default PropertyMap;
