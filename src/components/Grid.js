@@ -61,7 +61,7 @@ const Grid = () => {
         </Link>
 
         {/* Property Value Analysis */}
-        <Link href="/values" className="block transform transition-transform hover:scale-105">
+        <Link href="/trends" className="block transform transition-transform hover:scale-105">
           <div className="bg-gray-900 rounded-xl shadow-2xl overflow-hidden h-80">
             <div className="p-6 flex flex-col h-full">
               <h3 className="text-2xl font-bold text-white mb-3">Property Rent Analysis</h3>
