@@ -66,15 +66,17 @@ Same Age Properties: {sameAgeProperties}
 USER QUESTION:
 {question}
 
-Analyze this property and provide insights based on the available data. Focus on answering the user's specific question while providing relevant context. 
+If it is a simple question give a brief one line answer and STOP, if it requires analysis follow the following instructions:
+
+Focus on answering the user's specific question while providing relevant context. 
 Make direct comparisons to similar properties whenever possible and same age properties.
 Use specific numbers and percentages when they're available.
 If the user asks about something that isn't covered in the data, acknowledge the limitation but provide your best estimate based on the available information.
 
 FORMAT YOUR RESPONSE:
-1. Direct answer to the question (1-2 sentences)
-2. Supporting data points with comparisons (2-3 bullet points)
-3. Brief conclusion with actionable insight (1 sentence)
+<1. Direct answer to the question (1-2 sentences)>
+<2. Supporting data points with comparisons (2-3 bullet points)>
+<3. Brief conclusion with actionable insight (1 sentence)>
 `);
 
 // Create the chain
@@ -90,7 +92,6 @@ export async function POST(request) {
     
     // Ensure required property fields exist
     const property = {
-      Property_ID: propertyData.id || 'unknown',
       Name: propertyData.Name || propertyData.title || 'Unnamed Property',
       Address: propertyData.Address || 'Unknown Address',
       City: propertyData.City || 'Unknown City',
@@ -100,6 +101,8 @@ export async function POST(request) {
       Level: propertyData.Level || '1',
       Submarket: propertyData.Submarket || 'Unknown'
     };
+
+    console.log(property);
     
     // Fetch comparative data for this property
     const comparativeData = await fetchComparativeData(property);
@@ -110,9 +113,9 @@ export async function POST(request) {
       address: property.Address,
       city: property.City,
       state: property.State,
-      yearBuilt: property.year_built,
-      units: property.quantity,
-      levels: property.level,
+      yearBuilt: property.YearBuilt,
+      units: property.Quantity,
+      levels: property.Level,
       submarket: property.submarket,
       similarProperties: JSON.stringify(comparativeData.similarProperties),
     //   submarketAverages: JSON.stringify(comparativeData.submarketAverages),

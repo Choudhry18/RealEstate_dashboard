@@ -9,24 +9,19 @@ export default function Reflection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   
   // Define reflection content with headings as HTML
-  const reflectionContent = [
-    { type: 'heading', content: 'Project Overview' },
-    { type: 'paragraph', content: 'Throughout the development of this dashboard project, I embarked on a journey that combined technical challenges with creative problem-solving. The process began with understanding the requirements and envisioning how best to present complex real estate data in an intuitive and visually appealing manner.' },
+  const reflectionContent = [    
+    { type: 'heading', content: 'Advantages' },
+    { type: 'paragraph', content: 'By combining specific property data with comparative information from similar properties, the system provides nuanced insights tailored to each property\'s unique characteristics and market position. The solution can respond to a wide range of user questions without requiring pre-defined response templates, making it adaptable to diverse user needs.' },
+    { type: 'paragraph', content: 'Rather than offering generic advice, the system grounds its analysis in real property data, providing quantitative comparisons that help users make informed decisions. The architecture separates AI processing from the frontend, making it easier to enhance the model, add data sources, or optimize performance without major UI changes. The formatting guidelines ensure consistent, readable responses that highlight key metrics while maintaining a conversational tone.' },
     
-    { type: 'heading', content: 'Visualization Challenges' },
-    { type: 'paragraph', content: 'One of the first challenges I encountered was deciding on the appropriate visualization techniques for different types of data. Real estate data encompasses various dimensions—geographical locations, price trends, property attributes, and market dynamics. Each required careful consideration to determine the most effective way to convey insights without overwhelming users.' },
+    { type: 'heading', content: 'Limitations' },
+    { type: 'paragraph', content: 'The quality of insights is directly tied to the available data. Missing or inaccurate property information significantly degrades response quality. While the system can analyze provided data, it lacks broader market knowledge such as neighborhood development plans, local economic trends, or regulatory changes that might impact property value.' },
+    { type: 'paragraph', content: 'AI underlying language model tend to hallucinate, so occasionally the produce confident-sounding statements that extrapolate beyond the available data, potentially misleading users. The current implementation provides point-in-time analysis rather than tracking property performance over time, limiting its predictive capabilities.' },
     
-    { type: 'heading', content: 'Interactive Maps Implementation' },
-    { type: 'paragraph', content: 'The implementation of interactive maps proved particularly challenging yet rewarding. Balancing performance with functionality required thoughtful decisions about when to fetch data, how to cluster markers, and how to present information upon user interaction. I found that progressive loading and selective filtering significantly improved the user experience without compromising on the richness of the data presented.' },
-    
-    { type: 'heading', content: 'Responsive Design Considerations' },
-    { type: 'paragraph', content: 'Another significant aspect of this project was ensuring the dashboard remained responsive across different devices. The challenge of maintaining visual hierarchy and usability on smaller screens pushed me to rethink layout strategies and interaction patterns. This led to the implementation of adaptive components that could reshape themselves based on available screen space while preserving their core functionality.' },
-    
-    { type: 'heading', content: 'Data Processing and Analysis' },
-    { type: 'paragraph', content: 'Data processing and analysis formed the backbone of this dashboard. Cleaning, normalizing, and transforming raw data into actionable insights required careful consideration of both efficiency and accuracy. I implemented several preprocessing pipelines that could handle inconsistencies in the source data while extracting meaningful patterns that would be valuable to end-users.' },
-    
-    { type: 'heading', content: 'Conclusion' },
-    { type: 'paragraph', content: 'Looking back at the development journey, I recognize that the most valuable lessons came from iterative refinement based on testing and feedback. Each round of improvements brought the dashboard closer to being a truly useful tool for understanding real estate data. This project has been a comprehensive exercise in translating raw data into meaningful insights through thoughtful design and technical implementation.' },
+    { type: 'heading', content: 'Ethical Considerations' },
+    { type: 'paragraph', content: 'In correct information produced by GenAI about a property can be damaging to it\'s reputation. Even with anonymized property data, the system could potentially reveal sensitive information about property owners or tenants, raising privacy concerns. If the property database contains historical biases (e.g., undervalued properties in certain neighborhoods), the AI might perpetuate these biases in its analyses.' },
+    { type: 'paragraph', content: 'Users might place excessive trust in AI-generated insights, potentially making significant financial decisions without appropriate human judgment or expertise. The technology could create information asymmetries, giving technologically-savvy users advantages in real estate transactions over those with limited tech access. The "black box" nature of complex language models makes it difficult for users to understand how specific conclusions were reached, undermining informed decision-making.' },
+
   ];
   
   // Convert the structured content to flat text for animation

@@ -14,13 +14,13 @@ const PropertyMap = () => {
   const stateConfigs = {
     Texas: {
       center: [-97.7431, 30.2672],
-      zoom: 8,
+      zoom: 9,
       tilesetId: process.env.NEXT_PUBLIC_TX_MAPBOX,
       sourceLayer: 'Texas_mapbox-a84j0i',
     },
     Ohio: {
       center: [-81.5188, 41.0812],
-      zoom: 8,
+      zoom: 9,
       tilesetId: process.env.NEXT_PUBLIC_OH_MAPBOX, // Fallback to TX if OH not available
       sourceLayer: 'Ohio_mapbox-5pn39x', // Replace with actual Ohio source layer
     }
@@ -52,7 +52,8 @@ const PropertyMap = () => {
         
         const data = await response.json();
         // Display AI response
-        chatElement.innerHTML += `<div class="ai-message">AI: ${data.response}</div>`;
+        const formattedResponse = formatAIResponse(data.response);
+        chatElement.innerHTML += `<div class="ai-message">AI: ${formattedResponse}</div>`;
 
         
         // Scroll to bottom of chat
@@ -264,12 +265,6 @@ const PropertyMap = () => {
 
       // Add event listeners
       addEventListeners();
-
-      // Initialize OpenAI client
-      const llm = new ChatOpenAI({
-        modelName: "gpt-4o-mini",
-        temperature: 0.2,
-      });
     });
 
     // Clean up on unmount
@@ -321,5 +316,18 @@ const PropertyMap = () => {
   );
 };
 
+// Helper function to format the AI response with styling
+const formatAIResponse = (response) => {
+  // Convert bullet points to proper HTML
+  let formatted = response
+    .replace(/\n/g, '<br>')
+    .replace(/•\s(.*?)(?=<br>|$)/g, '<li>$1</li>')
+    .replace(/<li>(.*?)<\/li>(?=<br>|$)(?:<br>)?/g, '<ul class="ai-bullets"><li>$1</li></ul>');
+  
+  // Highlight numbers and percentages
+  formatted = formatted.replace(/(\d+\.?\d*%|\$\d+[\d,]*\.?\d*|\d+,\d+)/g, '<span class="ai-highlight">$1</span>');
+  
+  return formatted;
+};
 
 export default PropertyMap;

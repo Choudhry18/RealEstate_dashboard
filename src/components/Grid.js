@@ -24,7 +24,7 @@ const Grid = () => {
         </Link>
 
         {/* Area by Submarket */}
-        <Link href="/analytics" className="block transform transition-transform hover:scale-105">
+        <Link href="/area" className="block transform transition-transform hover:scale-105">
           <div className="bg-gray-900 rounded-xl shadow-2xl overflow-hidden h-80">
             <div className="p-6 flex flex-col h-full">
               <h3 className="text-2xl font-bold text-white mb-3">Area by Submarket</h3>
