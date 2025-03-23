@@ -30,6 +30,12 @@ export default function YearBuiltHistogram() {
   const [selectedSubmarket, setSelectedSubmarket] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null);
   
+  // Brush indices
+  const [brushIndices, setBrushIndices] = useState({
+    startIndex: 0,
+    endIndex: 0
+  });
+  
   // Client-side only initialization
   const [isClient, setIsClient] = useState(false);
   
@@ -181,8 +187,6 @@ export default function YearBuiltHistogram() {
         const minYear = Math.min(...years);
         const maxYear = Math.max(...years);
         
-        const histogramData = [];
-        
         // Group by decades for better visualization
         const decades = {};
         
@@ -196,16 +200,29 @@ export default function YearBuiltHistogram() {
           decades[decade] += yearCounts[year] || 0;
         }
         
-        // Convert to array format for chart
-        Object.keys(decades).forEach(decade => {
-          histogramData.push({
-            decade: `${decade}s`,
-            count: decades[decade]
-          });
-        });
+        // Convert to array format for chart and ensure numeric decade for sorting
+        const histogramData = Object.keys(decades).map(decade => ({
+          decade: `${decade}s`,
+          count: decades[decade],
+          decadeNum: parseInt(decade) // Add numeric decade for sorting
+        }));
         
+        // Sort by decade for chronological order
+        histogramData.sort((a, b) => a.decadeNum - b.decadeNum);
+        
+        // Calculate brush indices
+        const targetStartDecade = "1950s";
+        const startIndex = Math.max(0, histogramData.findIndex(item => item.decade === targetStartDecade));
+        const endIndex = histogramData.length - 1;
+        
+        // Set the data and brush indices
         setData(histogramData);
+        setBrushIndices({ startIndex, endIndex });
         setLoading(false);
+        
+        console.log(`Data contains ${histogramData.length} decades from ${histogramData[0]?.decade || 'none'} to ${histogramData[histogramData.length-1]?.decade || 'none'}`);
+        console.log(`Setting brush from index ${startIndex} (${histogramData[startIndex]?.decade || 'none'}) to ${endIndex} (${histogramData[endIndex]?.decade || 'none'})`);
+        
       } catch (err) {
         console.error('Error fetching year built data:', err);
         setError('Failed to load property data');
@@ -252,7 +269,7 @@ export default function YearBuiltHistogram() {
     <div className="p-6 bg-white rounded-lg shadow-lg">
       <div className="flex flex-col mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-9000">Year Built Distribution</h2>
+          <h2 className="text-xl font-bold text-slate-900">Year Built Distribution</h2>
           
           <button 
             onClick={resetFilters}
@@ -266,7 +283,7 @@ export default function YearBuiltHistogram() {
         
         <div className="flex flex-wrap items-center gap-y-2">
           <div className="flex items-center mr-2">
-            <MdFilterList className="text-gray-2000" />
+            <MdFilterList className="text-gray-600" />
             <span className="text-sm text-slate-700 font-medium ml-1">Filters:</span>
           </div>
           
@@ -365,17 +382,27 @@ export default function YearBuiltHistogram() {
                 fill="#4F46E5" 
                 radius={[4, 4, 0, 0]}
               />
-            <Brush 
-            dataKey="decade" 
-            height={30} 
-            stroke="#8884d8"
-            x={50}
-            y={280}  /* Position the brush lower */
-            travellerWidth={10}
-            fill="#f5f5f5"
-            />            </BarChart>
+              <Brush 
+                dataKey="decade" 
+                height={30} 
+                stroke="#8884d8"
+                startIndex={brushIndices.startIndex}
+                endIndex={brushIndices.endIndex}
+                x={50}
+                y={280}
+                travellerWidth={10}
+                fill="#f5f5f5"
+              />
+            </BarChart>
           </ResponsiveContainer>
           
+          {/* Data Summary */}
+          <div className="mt-6 text-sm text-gray-600">
+            <p>
+              Showing properties built from {data[0]?.decade || 'unknown'} to {data[data.length-1]?.decade || 'unknown'}
+              {data.length > 0 && ` (${data.reduce((sum, item) => sum + item.count, 0)} properties total)`}
+            </p>
+          </div>
         </div>
       )}
     </div>

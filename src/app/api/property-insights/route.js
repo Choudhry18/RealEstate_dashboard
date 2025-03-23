@@ -87,7 +87,7 @@ async function fetchComparisonData(property) {
 async function fetchInvestmentData(property) {
   // Fetch rent growth data
   const { data: rentTrends } = await supabase
-    .from('properties')
+    .from('lease_up_performance')
     .select('Rent_Growth_3, Rent_Growth_6, Initial_Avg_Rent, Price_Position_vs_SubMarket')
     .eq('Submarket', property.Submarket)
     .order('Rent_Growth_6', { ascending: false })
@@ -95,7 +95,7 @@ async function fetchInvestmentData(property) {
     
   // Fetch occupancy data
   const { data: occupancyData } = await supabase
-    .from('properties')
+    .from('lease_up_performance')
     .select('Occupancy_Month_3, Lease_Up_Time')
     .eq('Submarket', property.Submarket)
     .order('Occupancy_Month_3', { ascending: false })
@@ -122,22 +122,13 @@ async function fetchInvestmentData(property) {
 async function fetchMarketData(property) {
   // Fetch submarket competition data
   const { data: submarketData } = await supabase
-    .from('properties')
+    .from('lease_up_performance')
     .select('Submarket_Competition, Interest_Rate, Unemployment_Rate')
     .eq('Submarket', property.Submarket)
     .limit(10);
     
-  // Get broader market trends
-  const { data: marketTrends } = await supabase
-    .from('properties')
-    .select('Submarket, AVG(Rent_Growth_6) as avg_growth')
-    .group('Submarket')
-    .order('avg_growth', { ascending: false })
-    .limit(5);
-    
   return {
     submarketData: submarketData || [],
-    marketTrends: marketTrends || [],
     marketConditions: {
       competition: submarketData?.length ? 
         submarketData.reduce((sum, p) => sum + (parseFloat(p.Submarket_Competition) || 0), 0) / submarketData.length : 0,
@@ -190,13 +181,13 @@ const comparisonPrompt = PromptTemplate.fromTemplate(`
   
   Provide a structured comparison using this format exactly:
   
-  This property {comparisonStatement}
+  This property <comparisonStatement>
   
-  • {keyPoint1}
-  • {keyPoint2}
-  • {keyPoint3 if needed}
+  • <keyPoint1>
+  • <keyPoint2>
+  • <keyPoint3 if needed>
   
-  {actionableConclusion}
+  <actionableConclusion>
   
   Focus on meaningful differences and use specific numbers when available.
 `);
@@ -223,13 +214,13 @@ const investmentPrompt = PromptTemplate.fromTemplate(`
   
   Analyze this property's investment potential with this format:
   
-  {investmentSummary}
+  <investmentSummary>
   
-  • {financialMetric1}
-  • {financialMetric2}
-  • {riskFactor}
+  • <financialMetric1>
+  • <financialMetric2>
+  • <riskFactor>
   
-  {investmentRecommendation}
+  <investmentRecommendation>
   
   Be specific about ROI potential, risk factors, and use available metrics.
 `);
@@ -256,15 +247,18 @@ const marketPrompt = PromptTemplate.fromTemplate(`
   
   Provide market analysis with this structure:
   
-  {marketOverview}
+  <Market Overview>
+  Begin with a 1-2 sentence overview of the market conditions for this property.
   
-  • {trendPoint1}
-  • {trendPoint2}
-  • {competitionInsight}
+  • <Trend Point 1>
+  • <Trend Point 2>
+  • <Competition Insight>
   
-  {marketPrediction}
+  <Market Prediction>
   
   Focus on specific market conditions relevant to this property and location.
+  When discussing rent growth patterns, analyze the property's submarket trends 
+  compared to the broader market.
 `);
 
 // Step 4: Create the chains for each question type
