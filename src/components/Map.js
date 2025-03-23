@@ -53,8 +53,20 @@ const PropertyMap = () => {
         const data = await response.json();
         // Display AI response
         const formattedResponse = formatAIResponse(data.response);
-        chatElement.innerHTML += `<div class="ai-message">AI: ${formattedResponse}</div>`;
+        const aiMessage = document.createElement('div');
+        aiMessage.className = 'ai-message';
+        aiMessage.innerHTML = `AI: ${formattedResponse}`;
+        chatElement.appendChild(aiMessage);
 
+        const citationButtons = aiMessage.querySelectorAll('.ai-citation-button');
+        citationButtons.forEach(button => {
+          const url = button.getAttribute('onclick').match(/'([^']+)'/)[1];
+          button.removeAttribute('onclick');
+          button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.open(url, '_blank');
+          });
+        });
         
         // Scroll to bottom of chat
       } catch(error){
@@ -317,15 +329,57 @@ const PropertyMap = () => {
 };
 
 // Helper function to format the AI response with styling
+// Helper function to format the AI response with styling
 const formatAIResponse = (response) => {
+  // First extract any URLs in the response
+  const urlRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const urls = [];
+  let match;
+  
+  // Collect all citation URLs
+  while ((match = urlRegex.exec(response)) !== null) {
+    urls.push({
+      text: match[1],
+      url: match[2]
+    });
+  }
+  
+  // Remove markdown links from the main text
+  let formatted = response.replace(urlRegex, '$1');
+  
   // Convert bullet points to proper HTML
-  let formatted = response
+  formatted = formatted
     .replace(/\n/g, '<br>')
     .replace(/•\s(.*?)(?=<br>|$)/g, '<li>$1</li>')
     .replace(/<li>(.*?)<\/li>(?=<br>|$)(?:<br>)?/g, '<ul class="ai-bullets"><li>$1</li></ul>');
   
   // Highlight numbers and percentages
   formatted = formatted.replace(/(\d+\.?\d*%|\$\d+[\d,]*\.?\d*|\d+,\d+)/g, '<span class="ai-highlight">$1</span>');
+  
+  // Add citation section if we have URLs
+  if (urls.length > 0) {
+    formatted += `
+      <div class="ai-citations">
+        <p class="ai-citations-title">Sources:</p>
+        <div class="ai-citation-list">
+          ${urls.map((item, index) => 
+            `<div class="ai-citation-item">
+              <button 
+                class="ai-citation-button"
+                onclick="window.open('${item.url}', '_blank')"
+              >
+                ${item.text}
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="ai-external-link-icon">
+                  <path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+                  <path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+                </svg>
+              </button>
+            </div>`
+          ).join('')}
+        </div>
+      </div>
+    `;
+  }
   
   return formatted;
 };

@@ -38,6 +38,28 @@ const classifier = RunnableSequence.from([
   classifierLLM,
   new StringOutputParser()
 ]);
+// New augmented chain with web search capability
+const createAugmentedChain = (basePrompt, shouldUseWebSearch) => {
+  if (shouldUseWebSearch) {
+    return RunnableSequence.from([
+      basePrompt,
+      new ChatOpenAI({
+        modelName: "gpt-4o",
+        temperature: 0.2,
+      }).bindTools([
+        { type: "web_search_preview" },
+      ]),
+      new StringOutputParser()
+    ]);
+  } else {
+    // Return standard chain without web search
+    return RunnableSequence.from([
+      basePrompt,
+      llm,
+      new StringOutputParser()
+    ]);
+  }
+};
 
 // Step 2: Specialized data fetching strategies
 async function fetchFactData(property) {
@@ -244,17 +266,23 @@ const marketPrompt = PromptTemplate.fromTemplate(`
   Economic Indicators: {marketConditions}
   
   MARKET QUESTION: {question}
+
+  INSTRUCTIONS:
+  1. First analyze the internal database information provided.
+  2. Then, supplement this with current web information about:
+     - Current economic conditions affecting the {submarket} area
+     - New construction or development projects near {address}
   
   Provide market analysis with this structure:
   
   <Market Overview>
   Begin with a 1-2 sentence overview of the market conditions for this property.
   
-  • <Trend Point 1>
-  • <Trend Point 2>
+  • <1 line max Trend Point 1>
+  • <1 line max Trend Point 2 ONLY IF NEEDED>
   • <Competition Insight>
   
-  <Market Prediction>
+  <Concise 1 LINE MAX Market Prediction IF GOOD INSIGHTS available>
   
   Focus on specific market conditions relevant to this property and location.
   When discussing rent growth patterns, analyze the property's submarket trends 
@@ -262,29 +290,11 @@ const marketPrompt = PromptTemplate.fromTemplate(`
 `);
 
 // Step 4: Create the chains for each question type
-const factChain = RunnableSequence.from([
-  factPrompt,
-  llm,
-  new StringOutputParser()
-]);
-
-const comparisonChain = RunnableSequence.from([
-  comparisonPrompt,
-  llm,
-  new StringOutputParser()
-]);
-
-const investmentChain = RunnableSequence.from([
-  investmentPrompt,
-  llm,
-  new StringOutputParser()
-]);
-
-const marketChain = RunnableSequence.from([
-  marketPrompt,
-  llm,
-  new StringOutputParser()
-]);
+// Create chains with and without web search capability
+const factChain = createAugmentedChain(factPrompt, false); // Facts don't need web search
+const comparisonChain = createAugmentedChain(comparisonPrompt, false); // Use local data
+const investmentChain = createAugmentedChain(investmentPrompt, true); // Use web for investment trends
+const marketChain = createAugmentedChain(marketPrompt, true); // Use web for market insights
 
 // Create the main handler
 export async function POST(request) {

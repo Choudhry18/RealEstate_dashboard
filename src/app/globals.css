@@ -195,3 +195,49 @@ body {
   background: rgba(239, 68, 68, 0.3); /* red-500 with opacity */
   color: white;
 }
+
+/* Add to your CSS file or style section */
+.ai-citations {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.ai-citations-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.ai-citation-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.ai-citation-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #3b82f6;
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.ai-citation-link:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  text-decoration: underline;
+}
+
+.ai-external-link-icon {
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.ai-highlight {
+  font-weight: 600;
+  color: #1d4ed8;
+}
