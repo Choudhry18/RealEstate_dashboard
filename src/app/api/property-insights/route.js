@@ -8,7 +8,7 @@ const supabase = createClient();
 
 // Initialize OpenAI client for main analysis
 const llm = new ChatOpenAI({
-  modelName: "gpt-4o-mini",
+  modelName: "gpt-4o",
   temperature: 0.2,
 });
 
@@ -18,6 +18,14 @@ const classifierLLM = new ChatOpenAI({
   temperature: 0,
   maxTokens: 10
 });
+
+// Initialize web search enabled model
+const webSearchEnabledLLM = new ChatOpenAI({
+  modelName: "gpt-4o",
+  temperature: 0.2,
+}).bindTools([
+  { type: "web_search_preview" },
+]);
 
 // Step 1: Create question classifier
 const classifierPrompt = PromptTemplate.fromTemplate(`
@@ -38,17 +46,13 @@ const classifier = RunnableSequence.from([
   classifierLLM,
   new StringOutputParser()
 ]);
+
 // New augmented chain with web search capability
 const createAugmentedChain = (basePrompt, shouldUseWebSearch) => {
   if (shouldUseWebSearch) {
     return RunnableSequence.from([
       basePrompt,
-      new ChatOpenAI({
-        modelName: "gpt-4o",
-        temperature: 0.2,
-      }).bindTools([
-        { type: "web_search_preview" },
-      ]),
+      webSearchEnabledLLM, 
       new StringOutputParser()
     ]);
   } else {
@@ -64,7 +68,13 @@ const createAugmentedChain = (basePrompt, shouldUseWebSearch) => {
 // Step 2: Specialized data fetching strategies
 async function fetchFactData(property) {
   // For fact questions, we only need basic property data, which we already have
-  return { propertyDetails: property };
+  // But let's also fetch rent data for completeness
+  const rentData = await fetchRentData(property);
+  
+  return { 
+    propertyDetails: property,
+    yearlyRents: rentData.yearlyRents
+  };
 }
 
 async function fetchComparisonData(property) {
@@ -72,8 +82,7 @@ async function fetchComparisonData(property) {
   const { data: similarProperties } = await supabase
     .from('properties')
     .select('*')
-    .eq('Submarket', property.Submarket)
-    .neq('Property_ID', property.Property_ID)
+    .eq('submarket', property.Submarket)
     .limit(5);
     
   // Fetch properties of similar age
@@ -84,25 +93,18 @@ async function fetchComparisonData(property) {
   const { data: sameAgeProperties } = await supabase
     .from('properties')
     .select('*')
-    .gte('YearBuilt', constructionYearLow)
-    .lte('YearBuilt', constructionYearHigh)
+    .gte('year_built', constructionYearLow)
+    .lte('year_built', constructionYearHigh)
     .limit(5);
     
-  // Calculate average metrics for similar properties
-  const avgRent = similarProperties?.length ? 
-    similarProperties.reduce((sum, p) => sum + (parseFloat(p.Initial_Avg_Rent) || 0), 0) / similarProperties.length : 0;
   
-  const avgOccupancy = similarProperties?.length ? 
-    similarProperties.reduce((sum, p) => sum + (parseFloat(p.Occupancy_Month_3) || 0), 0) / similarProperties.length : 0;
+  // Fetch rent data
+  const rentData = await fetchRentData(property);
   
   return {
     similarProperties: similarProperties || [],
     sameAgeProperties: sameAgeProperties || [],
-    submarketAverages: {
-      avgRent,
-      avgOccupancy,
-      totalProperties: similarProperties?.length || 0
-    }
+    yearlyRents: rentData.yearlyRents || {}
   };
 }
 
@@ -110,34 +112,25 @@ async function fetchInvestmentData(property) {
   // Fetch rent growth data
   const { data: rentTrends } = await supabase
     .from('lease_up_performance')
-    .select('Rent_Growth_3, Rent_Growth_6, Initial_Avg_Rent, Price_Position_vs_SubMarket')
-    .eq('Submarket', property.Submarket)
-    .order('Rent_Growth_6', { ascending: false })
-    .limit(10);
-    
+    .select('rent_growth_3, rent_growth_6, initial_avg_rent, price_position_vs_submarket')
+    .eq('property_id', property.property_id)
+    .limit(1);
+
+  
   // Fetch occupancy data
   const { data: occupancyData } = await supabase
     .from('lease_up_performance')
-    .select('Occupancy_Month_3, Lease_Up_Time')
-    .eq('Submarket', property.Submarket)
-    .order('Occupancy_Month_3', { ascending: false })
-    .limit(10);
+    .select('occupancy_month_3', "submarket_competition")
+    .eq('property_id', property.property_id)
+    .limit(1);
     
-  // Calculate investment metrics
-  const avgRentGrowth = rentTrends?.length ? 
-    rentTrends.reduce((sum, p) => sum + (parseFloat(p.Rent_Growth_6) || 0), 0) / rentTrends.length : 0;
+  // Fetch rent data
+  const rentData = await fetchRentData(property);
   
-  const avgLeaseUpTime = occupancyData?.length ? 
-    occupancyData.reduce((sum, p) => sum + (parseFloat(p.Lease_Up_Time) || 0), 0) / occupancyData.length : 0;
-    
   return {
     rentTrends: rentTrends || [],
     occupancyData: occupancyData || [],
-    investmentMetrics: {
-      avgRentGrowth,
-      avgLeaseUpTime,
-      marketRank: rentTrends?.findIndex(p => p.Property_ID === property.Property_ID) || -1
-    }
+    yearlyRents: rentData.yearlyRents || {}
   };
 }
 
@@ -149,6 +142,9 @@ async function fetchMarketData(property) {
     .eq('Submarket', property.Submarket)
     .limit(10);
     
+  // Fetch rent data
+  const rentData = await fetchRentData(property);
+  
   return {
     submarketData: submarketData || [],
     marketConditions: {
@@ -156,8 +152,51 @@ async function fetchMarketData(property) {
         submarketData.reduce((sum, p) => sum + (parseFloat(p.Submarket_Competition) || 0), 0) / submarketData.length : 0,
       interestRate: submarketData?.[0]?.Interest_Rate || 'Unknown',
       unemploymentRate: submarketData?.[0]?.Unemployment_Rate || 'Unknown'
-    }
+    },
+    yearlyRents: rentData.yearlyRents || {}
   };
+}
+
+async function fetchRentData(property) {
+  try {
+    // Fetch rent data for the specific property by name
+    const { data: rentData, error } = await supabase
+      .from('yearly_rent')
+      .select('*')
+      .eq('Name', property.Name)
+      .limit(1);
+    
+    if (error) throw error;
+    
+    // Process the yearly rent data
+    const rentRecord = rentData && rentData.length > 0 ? rentData[0] : null;
+    // Define all possible years we're looking for
+    const allYears = Array.from({ length: 13 }, (_, i) => 2008 + i);
+    
+    // Create a structured rent history object with yearly data
+    const yearlyRents = {};
+    
+    if (rentRecord) {
+      // Extract rent data for each year
+      for (const year of allYears) {
+        yearlyRents[year] = rentRecord[year] || "Property not leased yet";
+      }
+    }
+
+    
+    return {
+      propertyRent: rentRecord || {},
+      yearlyRents: yearlyRents,
+      submarket: property.Submarket
+    };
+  } catch (error) {
+    console.error('Error fetching rent data:', error);
+    return {
+      propertyRent: {},
+      yearlyRents: {},
+      error: error.message
+    };
+  }
 }
 
 // Step 3: Create specialized prompts for each question type
@@ -174,9 +213,14 @@ const factPrompt = PromptTemplate.fromTemplate(`
   Levels: {levels}
   Submarket: {submarket}
   
+  PROPERTY RENT HISTORY:
+  {yearlyRents}
+  
   FACTUAL QUESTION: {question}
   
-  Give a direct, concise answer to this factual question. Keep your response to one or two sentences maximum. Do not provide analysis or comparisons unless specifically asked.
+  Give a direct, concise answer to this factual question. Keep your response to one or two sentences maximum. 
+  If the question relates to rent or leasing history, use the yearly rent data provided.
+  Do not provide analysis or comparisons unless specifically asked.
   
   Just state the fact and stop. No additional context needed.
 `);
@@ -198,6 +242,7 @@ const comparisonPrompt = PromptTemplate.fromTemplate(`
   Similar Properties in Submarket: {similarProperties}
   Properties of Similar Age: {sameAgeProperties}
   Submarket Averages: {submarketAverages}
+  Property Rent History: {yearlyRents}
   
   COMPARISON QUESTION: {question}
   
@@ -212,6 +257,7 @@ const comparisonPrompt = PromptTemplate.fromTemplate(`
   <actionableConclusion>
   
   Focus on meaningful differences and use specific numbers when available.
+  If the question relates to rent trends, analyze the property's rent history compared to market averages.
 `);
 
 const investmentPrompt = PromptTemplate.fromTemplate(`
@@ -231,6 +277,7 @@ const investmentPrompt = PromptTemplate.fromTemplate(`
   Rent Trends: {rentTrends}
   Occupancy Data: {occupancyData}
   Investment Performance: {investmentMetrics}
+  Historical Rent Data (by year): {yearlyRents}
   
   INVESTMENT QUESTION: {question}
   
@@ -245,6 +292,7 @@ const investmentPrompt = PromptTemplate.fromTemplate(`
   <investmentRecommendation>
   
   Be specific about ROI potential, risk factors, and use available metrics.
+  If historical rent data shows trends, include an analysis of rent growth patterns in your assessment.
 `);
 
 const marketPrompt = PromptTemplate.fromTemplate(`
@@ -264,14 +312,16 @@ const marketPrompt = PromptTemplate.fromTemplate(`
   Submarket Data: {submarketData}
   Market Trends: {marketTrends}
   Economic Indicators: {marketConditions}
+  Property Rent History: {yearlyRents}
   
   MARKET QUESTION: {question}
 
   INSTRUCTIONS:
-  1. First analyze the internal database information provided.
+  1. First analyze the internal database information provided, including the property's rent history.
   2. Then, supplement this with current web information about:
      - Current economic conditions affecting the {submarket} area
      - New construction or development projects near {address}
+     - Recent rent trends in the broader market
   
   Provide market analysis with this structure:
   
@@ -285,8 +335,11 @@ const marketPrompt = PromptTemplate.fromTemplate(`
   <Concise 1 LINE MAX Market Prediction IF GOOD INSIGHTS available>
   
   Focus on specific market conditions relevant to this property and location.
-  When discussing rent growth patterns, analyze the property's submarket trends 
-  compared to the broader market.
+  When discussing rent growth patterns, compare the property's historical rent data
+  with broader market trends from web research.
+  
+  IMPORTANT: When you use information from web searches, include a citation using the format:
+  [Source name](URL)
 `);
 
 // Step 4: Create the chains for each question type
@@ -344,7 +397,7 @@ export async function POST(request) {
         contextData = await fetchFactData(property);
         response = await factChain.invoke({
           ...basePromptData,
-          ...contextData
+          yearlyRents: JSON.stringify(contextData.yearlyRents || {})
         });
         break;
         
@@ -354,7 +407,8 @@ export async function POST(request) {
           ...basePromptData,
           similarProperties: JSON.stringify(contextData.similarProperties),
           sameAgeProperties: JSON.stringify(contextData.sameAgeProperties),
-          submarketAverages: JSON.stringify(contextData.submarketAverages)
+          submarketAverages: JSON.stringify(contextData.submarketAverages),
+          yearlyRents: JSON.stringify(contextData.yearlyRents || {})
         });
         break;
         
@@ -364,7 +418,8 @@ export async function POST(request) {
           ...basePromptData,
           rentTrends: JSON.stringify(contextData.rentTrends),
           occupancyData: JSON.stringify(contextData.occupancyData),
-          investmentMetrics: JSON.stringify(contextData.investmentMetrics)
+          investmentMetrics: JSON.stringify(contextData.investmentMetrics),
+          yearlyRents: JSON.stringify(contextData.yearlyRents || {})
         });
         break;
         
@@ -373,8 +428,9 @@ export async function POST(request) {
         response = await marketChain.invoke({
           ...basePromptData,
           submarketData: JSON.stringify(contextData.submarketData),
-          marketTrends: JSON.stringify(contextData.marketTrends),
-          marketConditions: JSON.stringify(contextData.marketConditions)
+          marketTrends: JSON.stringify(contextData.marketTrends || {}),
+          marketConditions: JSON.stringify(contextData.marketConditions),
+          yearlyRents: JSON.stringify(contextData.yearlyRents || {})
         });
         break;
         
@@ -385,7 +441,8 @@ export async function POST(request) {
           ...basePromptData,
           similarProperties: JSON.stringify(contextData.similarProperties),
           sameAgeProperties: JSON.stringify(contextData.sameAgeProperties),
-          submarketAverages: JSON.stringify(contextData.submarketAverages)
+          submarketAverages: JSON.stringify(contextData.submarketAverages),
+          yearlyRents: JSON.stringify(contextData.yearlyRents || {})
         });
     }
     

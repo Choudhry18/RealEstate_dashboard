@@ -10,18 +10,20 @@ export default function Reflection() {
   
   // Define reflection content with headings as HTML
   const reflectionContent = [    
-    { type: 'heading', content: 'Advantages' },
-    { type: 'paragraph', content: 'By combining specific property data with comparative information from similar properties, the system provides nuanced insights tailored to each property\'s unique characteristics and market position. The solution can respond to a wide range of user questions without requiring pre-defined response templates, making it adaptable to diverse user needs.' },
-    { type: 'paragraph', content: 'Rather than offering generic advice, the system grounds its analysis in real property data, providing quantitative comparisons that help users make informed decisions. The architecture separates AI processing from the frontend, making it easier to enhance the model, add data sources, or optimize performance without major UI changes. The formatting guidelines ensure consistent, readable responses that highlight key metrics while maintaining a conversational tone.' },
+    { type: 'heading', content: 'Prompting Strategy Advantages' },
+    { type: 'paragraph', content: 'The multi-agent prompting architecture with specialized prompts for different question types (FACT, COMPARISON, INVESTMENT, MARKET) enables more nuanced and accurate responses tailored to specific user needs. Each prompt template contains carefully designed instructions that guide the AI to focus on relevant data points and produce structured responses with consistent formatting.' },
+    { type: 'paragraph', content: 'By incorporating dynamic data retrieval from the Supabase database directly into prompts, the system grounds its responses in factual property information rather than hallucinating details. The question classification step intelligently routes queries to the appropriate specialized agent, ensuring users receive optimized responses without needing to specify the question type themselves.' },
+    { type: 'paragraph', content: 'The inclusion of web search capability for market and investment questions allows the system to supplement internal database information with current market trends and economic data, keeping responses fresh and relevant. Response templates with bullet points, numerical highlighting, and consistent structures make insights more digestible and actionable for users.' },
     
-    { type: 'heading', content: 'Limitations' },
-    { type: 'paragraph', content: 'The quality of insights is directly tied to the available data. Missing or inaccurate property information significantly degrades response quality. While the system can analyze provided data, it lacks broader market knowledge such as neighborhood development plans, local economic trends, or regulatory changes that might impact property value.' },
-    { type: 'paragraph', content: 'AI underlying language model tend to hallucinate, so occasionally the produce confident-sounding statements that extrapolate beyond the available data, potentially misleading users. The current implementation provides point-in-time analysis rather than tracking property performance over time, limiting its predictive capabilities.' },
+    { type: 'heading', content: 'Prompting Strategy Limitations' },
+    { type: 'paragraph', content: 'Despite specialized prompts, the language model occasionally produces overly confident assertions when data is sparse, as rigid formatting instructions may compel the model to generate insights even with insufficient information. The categorization of questions into four predefined types can create edge cases where questions that span multiple categories receive less comprehensive treatment.' },
+    { type: 'paragraph', content: 'Web search augmentation works inconsistently across different query types and locations, with smaller or less documented markets receiving fewer relevant search results to incorporate. The prompting system struggles with complex temporal questions that require understanding property performance across multiple time periods, as the templates don\'t fully support multi-dimensional time-based analysis.' },
+    { type: 'paragraph', content: 'When property-specific data is missing, the system falls back to submarket averages without clearly communicating this substitution to users, potentially creating false impressions of data specificity. The citation formatting in web search responses occasionally breaks when sources contain special characters or when results are paginated.' },
     
-    { type: 'heading', content: 'Ethical Considerations' },
-    { type: 'paragraph', content: 'In correct information produced by GenAI about a property can be damaging to it\'s reputation. Even with anonymized property data, the system could potentially reveal sensitive information about property owners or tenants, raising privacy concerns. If the property database contains historical biases (e.g., undervalued properties in certain neighborhoods), the AI might perpetuate these biases in its analyses.' },
-    { type: 'paragraph', content: 'Users might place excessive trust in AI-generated insights, potentially making significant financial decisions without appropriate human judgment or expertise. The technology could create information asymmetries, giving technologically-savvy users advantages in real estate transactions over those with limited tech access. The "black box" nature of complex language models makes it difficult for users to understand how specific conclusions were reached, undermining informed decision-making.' },
-
+    { type: 'heading', content: 'Ethical Considerations in Prompt Design' },
+    { type: 'paragraph', content: 'The prompts contain minimal guidance on avoiding potentially sensitive or discriminatory statements about neighborhoods or demographics, risking the perpetuation of biases in property valuation. By formatting responses with confident, authoritative language, the system may overstate certainty and underplay limitations in the underlying data, potentially misleading users.' },
+    { type: 'paragraph', content: 'The web search capability lacks sufficient guardrails to prevent the citation of unreliable sources, potentially amplifying misinformation about property markets. While the system carefully structured response formats for readability, it could more explicitly acknowledge when it\'s making projections versus stating facts to promote more responsible decision-making.' },
+    { type: 'paragraph', content: 'The integration of rent history data across all response types brings attention to financial metrics that may emphasize profit optimization over community impacts or affordable housing considerations. A more balanced prompt design could encourage contextualizing investment advice within broader social considerations of real estate development.' },
   ];
   
   // Convert the structured content to flat text for animation
@@ -80,7 +82,7 @@ export default function Reflection() {
         </Link>
         
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6 text-center">Project Reflection</h1>
+          <h1 className="text-3xl font-bold mb-6 text-center">Prompting Strategy Reflection</h1>
           
           <div className="bg-slate-800 bg-opacity-50 rounded-lg p-8 shadow-xl prose prose-invert max-w-none">
             {renderFormattedText()}
