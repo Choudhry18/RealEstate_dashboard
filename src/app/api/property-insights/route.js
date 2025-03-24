@@ -56,11 +56,11 @@ const createAugmentedChain = (basePrompt, shouldUseWebSearch) => {
       Follow these steps precisely:
       
       1. Analyze the internal database information provided
-      2. ALWAYS use web search to find current information about:
+      2. Use web search to find current information about:
          - Recent market conditions in for {submarket} submarket
          - Current economic trends affecting real estate in this area
          - New developments or construction projects nearby
-      3. Incorporate both sets of information in your response
+      3. Incorporate both sets of information in your response, ONLY INCLUDE WEB SEARCH FACTS IF RELEVANT
       
       EXAMPLE WEB SEARCH QUERY: "real estate market trends in {city} {state} {submarket} 2025"
       EXAMPLE WEB SEARCH QUERY: "new construction projects near {address} {city}"
@@ -109,7 +109,7 @@ async function fetchComparisonData(property) {
     .select('*')
     .eq('submarket', property.Submarket)
     .limit(5);
-    
+
   // Fetch properties of similar age
   const yearRange = 5;
   const constructionYearLow = parseInt(property.YearBuilt) - yearRange;
@@ -126,7 +126,7 @@ async function fetchComparisonData(property) {
   // Fetch property-specific data
   const gradeData = await fetchGradeData(property);
   const pricePositionData = await fetchPricePositionData(property);
-  
+
   return {
     similarProperties: similarProperties || [],
     sameAgeProperties: sameAgeProperties || [],
@@ -540,8 +540,6 @@ async function fetchGradeData(property) {
       .eq('Name', property.Name)
       .limit(1);
     
-    if (error) throw error;
-    
     // Process the yearly grade data
     const gradeRecord = gradeData && gradeData.length > 0 ? gradeData[0] : null;
     // Define all possible years we're looking for
@@ -653,7 +651,7 @@ const comparisonPrompt = PromptTemplate.fromTemplate(`
   PROPERTY HISTORICAL DATA:
   Yearly Rents: {yearlyRents}
   Yearly Grades: {yearlyGrades}
-  Yearly Price Positions: {yearlyPricePositions}
+  Yearly Rent Relative to Submarket (formula = propertyRent/submarketAverageRent): {yearlyPricePositions}
   
   COMPARATIVE DATA:
   Similar Properties in Submarket: {similarProperties}
@@ -885,71 +883,81 @@ export async function POST(request) {
       question: question
     };
     
-    // Process based on question type
-    switch(questionType.trim().toUpperCase()) {
-      case "FACT":
-        contextData = await fetchFactData(property);
-        response = await factChain.invoke({
-          ...basePromptData,
-          yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
-          yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
-          yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {})
-        });
-        break;
-        
-      case "COMPARISON":
-        contextData = await fetchComparisonData(property);
-        response = await comparisonChain.invoke({
-          ...basePromptData,
-          yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
-          yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
-          yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {}),
-          similarProperties: JSON.stringify(contextData.similarProperties || []),
-          sameAgeProperties: JSON.stringify(contextData.sameAgeProperties || []),
-          submarketAvgRents: JSON.stringify(contextData.submarketAvgRents || {}),
-          submarketAvgGrades: JSON.stringify(contextData.submarketAvgGrades || {})
-        });
-        break;
-        
-      case "INVESTMENT":
-        contextData = await fetchInvestmentData(property);
-        response = await investmentChain.invoke({
-          ...basePromptData,
-          yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
-          yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
-          yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {}),
-          investmentMetrics: JSON.stringify(contextData.investmentMetrics || {})
-        });
-        break;
-        
-      case "MARKET":
-        contextData = await fetchMarketData(property);
-        response = await marketChain.invoke({
-          ...basePromptData,
-          yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
-          yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
-          yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {}),
-          rentTrends: JSON.stringify(contextData.rentTrends || {}),
-          rentGrowthByYear: JSON.stringify(contextData.rentGrowthByYear || {}),
-          gradeDistribution: JSON.stringify(contextData.gradeDistribution || {}),
-          marketConditions: JSON.stringify(contextData.marketConditions || {})
-        });
-        break;
-        
-      default:
-        // Fallback to comparison as the default
-        contextData = await fetchComparisonData(property);
-        response = await comparisonChain.invoke({
-          ...basePromptData,
-          yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
-          yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
-          yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {}),
-          similarProperties: JSON.stringify(contextData.similarProperties || []),
-          sameAgeProperties: JSON.stringify(contextData.sameAgeProperties || []),
-          submarketAvgRents: JSON.stringify(contextData.submarketAvgRents || {}),
-          submarketAvgGrades: JSON.stringify(contextData.submarketAvgGrades || {})
-        });
-    }
+   // Process based on question type
+switch(questionType.trim().toUpperCase()) {
+  case "FACT":
+    contextData = await fetchFactData(property);
+    const factPromptData = {
+      ...basePromptData,
+      yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
+      yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
+      yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {})
+    };
+    logPromptData('fact', factPromptData);
+    response = await factChain.invoke(factPromptData);
+    break;
+    
+  case "COMPARISON":
+    contextData = await fetchComparisonData(property);
+    const comparisonPromptData = {
+      ...basePromptData,
+      yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
+      yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
+      yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {}),
+      similarProperties: JSON.stringify(contextData.similarProperties || []),
+      sameAgeProperties: JSON.stringify(contextData.sameAgeProperties || []),
+      submarketAvgRents: JSON.stringify(contextData.submarketAvgRents || {}),
+      submarketAvgGrades: JSON.stringify(contextData.submarketAvgGrades || {})
+    };
+    logPromptData('comparison', comparisonPromptData);
+    response = await comparisonChain.invoke(comparisonPromptData);
+    break;
+    
+  case "INVESTMENT":
+    contextData = await fetchInvestmentData(property);
+    const investmentPromptData = {
+      ...basePromptData,
+      yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
+      yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
+      yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {}),
+      investmentMetrics: JSON.stringify(contextData.investmentMetrics || {})
+    };
+    logPromptData('investment', investmentPromptData);
+    response = await investmentChain.invoke(investmentPromptData);
+    break;
+    
+  case "MARKET":
+    contextData = await fetchMarketData(property);
+    const marketPromptData = {
+      ...basePromptData,
+      yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
+      yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
+      yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {}),
+      rentTrends: JSON.stringify(contextData.rentTrends || {}),
+      rentGrowthByYear: JSON.stringify(contextData.rentGrowthByYear || {}),
+      gradeDistribution: JSON.stringify(contextData.gradeDistribution || {}),
+      marketConditions: JSON.stringify(contextData.marketConditions || {})
+    };
+    logPromptData('market', marketPromptData);
+    response = await marketChain.invoke(marketPromptData);
+    break;
+    
+  default:
+    // Fallback to comparison as the default
+    contextData = await fetchComparisonData(property);
+    const defaultPromptData = {
+      ...basePromptData,
+      yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
+      yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
+      yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {}),
+      similarProperties: JSON.stringify(contextData.similarProperties || []),
+      sameAgeProperties: JSON.stringify(contextData.sameAgeProperties || []),
+      submarketAvgRents: JSON.stringify(contextData.submarketAvgRents || {}),
+      submarketAvgGrades: JSON.stringify(contextData.submarketAvgGrades || {})
+    };
+    logPromptData('default', defaultPromptData);
+    response = await comparisonChain.invoke(defaultPromptData);
+}
     
     // Return the response with metadata
     return new Response(JSON.stringify({ 
@@ -977,4 +985,94 @@ export async function POST(request) {
       headers: { 'Content-Type': 'application/json' }
     });
   }
+}
+
+// Add this logging helper at the top of your file, just below your imports
+
+// Helper function to log data while handling large objects with circular references
+function logPromptData(type, data) {
+  console.log(`\n----- ${type.toUpperCase()} PROMPT DATA -----`);
+  
+  // First log basic property info
+  if (data.name) console.log(`Property: ${data.name} (${data.city}, ${data.state})`);
+  if (data.submarket) console.log(`Submarket: ${data.submarket}`);
+  
+  // Log sample of yearly data if available
+  if (data.yearlyRents) {
+    const rentData = JSON.parse(data.yearlyRents);
+    const rentYears = Object.keys(rentData).sort();
+    console.log(`\nRent data available for years: ${rentYears.join(', ')}`);
+    if (rentYears.length > 0) {
+      const latestYear = rentYears[rentYears.length - 1];
+      console.log(`Latest rent (${latestYear}): ${rentData[latestYear]}`);
+    }
+  }
+  
+  if (data.yearlyGrades) {
+    const gradeData = JSON.parse(data.yearlyGrades);
+    const yearsWithGrades = Object.keys(gradeData)
+      .filter(year => gradeData[year] !== "N/A")
+      .sort();
+    console.log(`\nGrade data available for years: ${yearsWithGrades.join(', ')}`);
+    if (yearsWithGrades.length > 0) {
+      const latestYear = yearsWithGrades[yearsWithGrades.length - 1];
+      console.log(`Latest grade (${latestYear}): ${gradeData[latestYear]}`);
+    }
+  }
+  
+  if (data.yearlyPricePositions) {
+    const priceData = JSON.parse(data.yearlyPricePositions);
+    const yearsWithPrices = Object.keys(priceData)
+      .filter(year => priceData[year] !== "N/A")
+      .sort();
+    console.log(`\nPrice position data available for years: ${yearsWithPrices.join(', ')}`);
+    if (yearsWithPrices.length > 0) {
+      const latestYear = yearsWithPrices[yearsWithPrices.length - 1];
+      console.log(`Latest price position (${latestYear}): ${priceData[latestYear]}`);
+    }
+  }
+  
+  // Log comparison data if available
+  if (data.similarProperties) {
+    const properties = JSON.parse(data.similarProperties);
+    console.log(`\nSimilar properties in submarket: ${properties.length}`);
+    if (properties.length > 0) {
+      console.log(`Example property: ${properties[0].Name || properties[0].title || 'Unnamed'}`);
+    }
+  }
+  
+  if (data.submarketAvgRents) {
+    const submarketRents = JSON.parse(data.submarketAvgRents);
+    const years = Object.keys(submarketRents).sort();
+    console.log(`\nSubmarket average rents available for: ${years.join(', ')}`);
+    if (years.length > 0) {
+      const latestYear = years[years.length - 1];
+      console.log(`Latest submarket avg rent (${latestYear}): $${submarketRents[latestYear].toFixed(2)}`);
+    }
+  }
+  
+  // Log investment metrics if available
+  if (data.investmentMetrics) {
+    const metrics = JSON.parse(data.investmentMetrics);
+    console.log('\nInvestment metrics:');
+    if ('annualRentGrowth' in metrics) console.log(`- Annual rent growth: ${metrics.annualRentGrowth.toFixed(2)}%`);
+    if ('gradeImprovement' in metrics) console.log(`- Grade trend: ${metrics.gradeImprovement}`);
+    if ('avgPricePosition' in metrics) console.log(`- Avg price position: ${metrics.avgPricePosition.toFixed(2)}%`);
+    
+    if (metrics.submarketRentGrowth) {
+      console.log(`- Submarket annual growth: ${metrics.submarketRentGrowth.annual.toFixed(2)}%`);
+    }
+  }
+  
+  // Log market data if available
+  if (data.marketConditions) {
+    const marketData = JSON.parse(data.marketConditions);
+    console.log('\nMarket conditions:');
+    if ('currentAvgRent' in marketData) console.log(`- Current avg rent: $${marketData.currentAvgRent.toFixed(2)}`);
+    if ('recentRentGrowth' in marketData) console.log(`- Recent rent growth: ${marketData.recentRentGrowth.toFixed(2)}%`);
+    if ('dominantGrade' in marketData) console.log(`- Dominant grade: ${marketData.dominantGrade}`);
+  }
+  
+  console.log(`\nQuestion: "${data.question}"`);
+  console.log("----- END PROMPT DATA -----\n");
 }
