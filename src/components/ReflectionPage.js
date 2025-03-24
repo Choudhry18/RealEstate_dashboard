@@ -75,12 +75,6 @@ const reflectionContent = [
   return (
     <div className="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-white rounded-xl">
       <div className="container mx-auto px-4 py-12">
-        <Link 
-          href="/"
-          className="inline-block mb-8 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-        >
-          &larr; Back to Dashboard
-        </Link>
         
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold mb-6 text-center">Prompting Strategy Reflection</h1>

@@ -7,7 +7,7 @@ import Box from '@/components/Box';
 export default function MapPage() {
     return (
       <div className="max-w-6xl mx-auto p-6">
-        <div className="h-[800px] w-full">
+        <div className="h-screen max-h-[calc(100vh-120px)] w-full">          
           <PropertyMap />
         </div>
     </div>

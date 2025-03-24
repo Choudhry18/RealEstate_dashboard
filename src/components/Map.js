@@ -295,7 +295,7 @@ const PropertyMap = () => {
   return (
     <div className="rounded-lg shadow-xl overflow-hidden bg-white">
       <div className="p-4 bg-slate-800 text-white flex justify-between items-center">
-        <h2 className="text-xl font-bold">Property Map</h2>
+        <h2 className="text-xl font-bold">Property Map (Click on a Property to get GenAI insights) </h2>
         <div className="flex items-center gap-2">
           <span className={`text-sm font-medium ${state === 'Texas' ? 'text-blue-400' : 'text-white/70'}`}>
             Texas

@@ -354,3 +354,42 @@ The system implements graceful degradation through data fallbacks - for example,
 4. The appropriate prompt template is populated with data
 5. The LLM (with or without web search) generates a response
 6. Response is formatted and displayed in the UI
+
+<br/><br/>
+<br/><br/>
+
+
+# GenAI tools used 
+
+Throughout the development of the Affinius Dashboard, several GenAI tools were leveraged to accelerate development, solve technical challenges, and improve implementation quality:
+
+## GitHub Copilot
+
+GitHub Copilot was extensively used for both code generation and debugging:
+
+1. **Function Implementation**: Copilot helped implement complex data processing functions by understanding requirements expressed in natural language. Example prompts included:
+   - "Implement a function that would take a dataframe with columns {property_id, year, rent, grade} and return a dataframe with yearly_averages"
+   - "Create a data transformation that converts the nested grade history into a year-over-year comparison"
+
+2. **Debugging Assistance**: When facing issues with database queries or component rendering, Copilot helped diagnose and resolve problems:
+   - "Why is my submarket_grade query returning null despite the property name existing in the database?"
+   - "Fix the column name casing issue in the database query"
+
+3. **Prompt Engineering**: Copilot assisted in refining the AI prompt templates for better response quality and consistency.
+
+## Mapbox Ask AI
+
+The Mapbox interactive map implementation was significantly accelerated by using [Mapbox Ask AI](https://docs.mapbox.com/ask-ai/):
+
+1. **Custom Layer Implementation**: Generated code for property location markers and custom popups
+2. **Event Handling**: Helped implement the property selection and click interactions
+3. **Performance Optimization**: Provided guidance on efficiently rendering large datasets of property locations
+
+## OpenAI Tools
+
+OpenAI's tools were used in two principal ways:
+
+1. **Prompt Development**: ChatGPT was used to iteratively refine prompt templates, particularly for the few-shot examples that demonstrate the desired response format
+2. **Data Processing Logic**: Helped conceptualize the design of specialized data retrieval functions for different question types
+
+These GenAI tools significantly reduced development time while improving code quality and enabling more sophisticated features than would have been practical to implement within the project timeline using traditional development approaches alone.
