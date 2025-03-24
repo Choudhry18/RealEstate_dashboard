@@ -15,7 +15,7 @@ The system begins by classifying incoming questions into four specialized catego
 - **INVESTMENT**: Questions about investment potential, ROI, or value
 - **MARKET**: Questions about market trends, predictions, or conditions
 
-This classification uses a lightweight model (`gpt-4o-mini`) to efficiently route questions to the appropriate specialized prompt.
+This classification uses a lightweight model (`gpt-4o-mini`) by OpenAI to efficiently route questions to the appropriate specialized prompt.
 
 ```javascript
 const classifierPrompt = PromptTemplate.fromTemplate(`
@@ -44,6 +44,8 @@ Each question type triggers a specific data retrieval strategy that fetches onll
 This targeted approach ensures the LLM receives the most relevant context while minimizing token usage.
 
 ### 3. Specialized Prompts
+
+The system uses four specialized prompts engineered for different question types and model used is (`gpt-4o`) by OpenAI:
 
 ``` javascript
 
@@ -275,7 +277,7 @@ const marketPrompt = PromptTemplate.fromTemplate(`
 
 ### 4. Web Search Integration 
 
-For questions requiring current market information or information that is not in the provided data but would help provide more context, the system selectively employs web search capabilities:
+For questions requiring current market information or information that is not in the provided data but would help provide more context, the system selectively employs web search capabilities. In this case a template giving basic information about the propery is prepended to the base prompt that instructs the AI model on what to search and how to use those results. This helps balance the insights from the web with the insights from the database data. The prompt also instructs the model to give sources that are presented to the user which helps with reliability and authenticity. 
 
 ``` javascript 
 
@@ -305,3 +307,50 @@ const webSearchPrompt = PromptTemplate.fromTemplate(`
 
 ```
 
+## Prompt Engineering Techniques Used 
+
+### 1. Few-Shot learning with Structured Templates
+
+Each prompt includes carefully crafted examples that demonstrate the expected response format and reasoning process. These examples use real estate-specific language and metrics, teaching the model to focus on relevant insights and maintain industry-appropriate terminology.
+
+### 2. Response Structure Enforcement
+
+Each prompt contains explicit instructions for formatting responses consistently:
+
+```
+Provide market analysis with this structure:
+
+<Market Overview>
+Begin with a 1-2 sentence overview of the market conditions for this property.
+
+• <1 line max Trend Point 1>
+• <1 line max Trend Point 2 ONLY IF NEEDED>
+• <Competition Insight>
+
+<Concise 1 LINE MAX Market Prediction IF GOOD INSIGHTS available>
+```
+
+This strict formatting guidance ensures responses are scannable, professional, and actionable for real estate professionals.
+
+### 3. Data-Grounded Reasoning
+
+Prompts explicitly request analysis based on the provided historical data:
+
+```
+When discussing trends, analyze all available historical data (rents, grades, price positions).
+```
+
+This instruction forces the model to ground its reasoning in the actual property performance data rather than making generic statements.
+
+### 4. Fallback Machanisms
+
+The system implements graceful degradation through data fallbacks - for example, if rent data is missing for a year, it's marked as "Property not leased yet" rather than returning null values. This prevents the model from making incorrect assumptions about missing data.
+
+## Technical Integration Flow
+
+1. User clicks property on map and asks a question
+2. Question is classified by the classifier model
+3. Specialized data for that question type is retrieved
+4. The appropriate prompt template is populated with data
+5. The LLM (with or without web search) generates a response
+6. Response is formatted and displayed in the UI
