@@ -9,22 +9,23 @@ export default function Reflection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   
   // Define reflection content with headings as HTML
-  const reflectionContent = [    
-    { type: 'heading', content: 'Prompting Strategy Advantages' },
-    { type: 'paragraph', content: 'The multi-agent prompting architecture with specialized prompts for different question types (FACT, COMPARISON, INVESTMENT, MARKET) enables more nuanced and accurate responses tailored to specific user needs. Each prompt template contains carefully designed instructions that guide the AI to focus on relevant data points and produce structured responses with consistent formatting.' },
-    { type: 'paragraph', content: 'By incorporating dynamic data retrieval from the Supabase database directly into prompts, the system grounds its responses in factual property information rather than hallucinating details. The question classification step intelligently routes queries to the appropriate specialized agent, ensuring users receive optimized responses without needing to specify the question type themselves.' },
-    { type: 'paragraph', content: 'The inclusion of web search capability for market and investment questions allows the system to supplement internal database information with current market trends and economic data, keeping responses fresh and relevant. Response templates with bullet points, numerical highlighting, and consistent structures make insights more digestible and actionable for users.' },
-    
-    { type: 'heading', content: 'Prompting Strategy Limitations' },
-    { type: 'paragraph', content: 'Despite specialized prompts, the language model occasionally produces overly confident assertions when data is sparse, as rigid formatting instructions may compel the model to generate insights even with insufficient information. The categorization of questions into four predefined types can create edge cases where questions that span multiple categories receive less comprehensive treatment.' },
-    { type: 'paragraph', content: 'Web search augmentation works inconsistently across different query types and locations, with smaller or less documented markets receiving fewer relevant search results to incorporate. The prompting system struggles with complex temporal questions that require understanding property performance across multiple time periods, as the templates don\'t fully support multi-dimensional time-based analysis.' },
-    { type: 'paragraph', content: 'When property-specific data is missing, the system falls back to submarket averages without clearly communicating this substitution to users, potentially creating false impressions of data specificity. The citation formatting in web search responses occasionally breaks when sources contain special characters or when results are paginated.' },
-    
-    { type: 'heading', content: 'Ethical Considerations in Prompt Design' },
-    { type: 'paragraph', content: 'The prompts contain minimal guidance on avoiding potentially sensitive or discriminatory statements about neighborhoods or demographics, risking the perpetuation of biases in property valuation. By formatting responses with confident, authoritative language, the system may overstate certainty and underplay limitations in the underlying data, potentially misleading users.' },
-    { type: 'paragraph', content: 'The web search capability lacks sufficient guardrails to prevent the citation of unreliable sources, potentially amplifying misinformation about property markets. While the system carefully structured response formats for readability, it could more explicitly acknowledge when it\'s making projections versus stating facts to promote more responsible decision-making.' },
-    { type: 'paragraph', content: 'The integration of rent history data across all response types brings attention to financial metrics that may emphasize profit optimization over community impacts or affordable housing considerations. A more balanced prompt design could encourage contextualizing investment advice within broader social considerations of real estate development.' },
-  ];
+  
+const reflectionContent = [    
+  { type: 'heading', content: 'Prompting Strategy Advantages' },
+  { type: 'paragraph', content: 'The multi-agent prompting architecture with specialized prompts for different question types (FACT, COMPARISON, INVESTMENT, MARKET) enables contextually appropriate analysis tailored to specific query intents. By implementing question classification first, then targeted data retrieval, the system efficiently processes complex real estate inquiries without requiring users to specify question categories themselves.' },
+  { type: 'paragraph', content: 'My approach grounds responses in factual property data from the provided dataset with structured templates and few-shot examples for consistent, professional formatting. The specialized data fetching strategies ensure each question type receives precisely the necessary context, reducing token usage while maximizing relevance. The web search augmentation for market and investment questions provides current trends with source citations, enhancing credibility and addressing historical data limitations.' },
+  { type: 'paragraph', content: 'The fallback mechanisms ensure graceful degradation when specific data points are missing (for missing rent years it tells the LLM that the property hasn\'t been leased yet). These architectural decisions collectively enable more nuanced, data-driven property analysis than would be possible with simpler prompts.' },
+  
+  { type: 'heading', content: 'Prompting Strategy Limitations' },
+  { type: 'paragraph', content: 'Despite the sophisticated architecture, the quality of responses heavily depends on available property data, with properties having limited historical information receiving less nuanced analysis. Web search augmentation only partially addresses these gaps and introduces reliability concerns with external information that may be outdated or inaccurate.' },
+  { type: 'paragraph', content: 'The rigid response formatting templates may compel the model to generate insights even when data is insufficient, potentially leading to unjustified confidence in recommendations. Additionally, the predefined question categories can create edge cases where cross-category questions receive incomplete analysis.' },
+  { type: 'paragraph', content: 'Real estate decisions have significant financial implications, making information accuracy a critical ethical concern. This system may present analysis with authoritative language even when based on limited data, potentially influencing investment decisions without adequately communicating uncertainty.' },
+
+  { type: 'heading', content: 'Ethical Considerations' },
+  { type: 'paragraph', content: 'The historical database may contain implicit biases related to property valuation or neighborhood characteristics that this system could propagate or amplify, particularly in markets with histories of discriminatory practices. Without explicit guardrails in prompts regarding sensitive demographic or neighborhood characterizations, the system risks perpetuating these biases.' },
+  { type: 'paragraph', content: 'The focus on investment metrics across all response types emphasizes financial optimization over broader social considerations, including affordable housing impacts. A more balanced approach would contextualize investment advice within the social aspects of real estate development and acknowledge data limitations more transparently to support responsible decision-making.' },
+  { type: 'paragraph', content: 'The added information from the web search may introduce false information that can damage a property\'s reputation or value.' },
+];
   
   // Convert the structured content to flat text for animation
   const flatText = reflectionContent.map(item => {

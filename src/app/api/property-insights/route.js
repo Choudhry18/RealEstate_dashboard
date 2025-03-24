@@ -837,7 +837,7 @@ const marketPrompt = PromptTemplate.fromTemplate(`
 // Step 4: Create the chains for each question type
 // Create chains with and without web search capability
 const factChain = createAugmentedChain(factPrompt, false); // Facts don't need web search
-const comparisonChain = createAugmentedChain(comparisonPrompt, false); // Use local data
+const comparisonChain = createAugmentedChain(comparisonPrompt, true); // use web for comparison insights
 const investmentChain = createAugmentedChain(investmentPrompt, true); // Use web for investment trends
 const marketChain = createAugmentedChain(marketPrompt, true); // Use web for market insights
 

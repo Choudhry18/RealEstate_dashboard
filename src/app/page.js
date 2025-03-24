@@ -7,7 +7,7 @@ export default function LandingPage() {
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto mb-12 text-center">
           <div className="mt-8 flex justify-center gap-6">
-            <Link href="/documentation" 
+            <Link href="https://github.com/Choudhry18/RealEstate_dashboard/blob/main/DOC.md" 
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg 
                             transition-colors flex items-center gap-2">
               <span className="font-medium">Documentation</span>
