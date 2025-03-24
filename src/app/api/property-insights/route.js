@@ -713,7 +713,7 @@ const investmentPrompt = PromptTemplate.fromTemplate(`
   PROPERTY HISTORICAL DATA:
   Yearly Rents: {yearlyRents}
   Yearly Grades: {yearlyGrades}
-  Yearly Price Positions: {yearlyPricePositions}
+  Yearly Rent Relative to Submarket (formula = propertyRent/submarketAverageRent): {yearlyPricePositions}
   
   INVESTMENT METRICS:
   Investment Metrics Summary: {investmentMetrics}
@@ -774,7 +774,7 @@ const marketPrompt = PromptTemplate.fromTemplate(`
   PROPERTY HISTORICAL DATA:
   Yearly Rents: {yearlyRents}
   Yearly Grades: {yearlyGrades}
-  Yearly Price Positions: {yearlyPricePositions}
+  Yearly Rent Relative to Submarket (formula = propertyRent/submarketAverageRent): {yearlyPricePositions}
   
   MARKET CONDITIONS:
   Rent Trends: {rentTrends}
