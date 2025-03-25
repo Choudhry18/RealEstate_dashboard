@@ -34,6 +34,7 @@ const classifierPrompt = PromptTemplate.fromTemplate(`
   
   Into one of these exact categories:
   - FACT: Simple factual questions about property details, location, or features
+  - COMPLEX_FACT: Detailed factual questions that may require external information or research
   - COMPARISON: Questions comparing this property to others in the market/area
   - INVESTMENT: Questions about investment potential, ROI, or value
   - MARKET: Questions about market trends, predictions, or conditions
@@ -635,6 +636,49 @@ const factPrompt = PromptTemplate.fromTemplate(`
   Just state the fact and stop. No additional context needed.
 `);
 
+const complexFactPrompt = PromptTemplate.fromTemplate(`
+  You are providing detailed factual information about a property using both internal database and web search.
+  
+  PROPERTY INFORMATION:
+  Name: {name}
+  Address: {address}
+  City: {city}
+  State: {state}
+  Year Built: {yearBuilt}
+  Units: {units}
+  Levels: {levels}
+  Submarket: {submarket}
+  
+  PROPERTY RENT HISTORY:
+  {yearlyRents}
+  
+  COMPLEX FACTUAL QUESTION: {question}
+  
+  INSTRUCTIONS:
+  1. First check the internal database information provided
+  2. If the question cannot be fully answered with the internal data, use web search to find the necessary information
+  3. For web searches, consider using queries like:
+     - "{name} {address} property details"
+     - "{name} {city} real estate facts"
+     - "{submarket} {city} property information"
+  4. When you include information from web searches, provide a citation using the format: [Source name](URL)
+  
+  Give a comprehensive but concise answer to this factual question. 
+  Integrate information from both the database and web search (if needed).
+  
+  EXAMPLES:
+  
+  Question: What amenities does this property offer?
+  Answer:
+  The Woodlands at Main offers a premium amenity package including a resort-style pool, 24-hour fitness center, pet park, and business center. The property also features EV charging stations and private garages for select units. [The Woodlands Official Site](https://www.woodlandsmain.com/amenities)
+  
+  Question: What school districts serve this property?
+  Answer:
+  The Ridgeline Apartments are served by the Leander Independent School District. Specifically, children at this address attend River Ridge Elementary School (K-5), Canyon Ridge Middle School (6-8), and Vista Ridge High School (9-12). [Leander ISD](https://www.leanderisd.org/schools)
+  
+  Now, provide a factual answer to this question about {name}: {question}
+`);
+
 const comparisonPrompt = PromptTemplate.fromTemplate(`
   You are a real estate analyst providing comparative insights.
   
@@ -837,6 +881,7 @@ const marketPrompt = PromptTemplate.fromTemplate(`
 // Step 4: Create the chains for each question type
 // Create chains with and without web search capability
 const factChain = createAugmentedChain(factPrompt, false); // Facts don't need web search
+const complexFactChain = createAugmentedChain(complexFactPrompt, true); // Complex facts use web search
 const comparisonChain = createAugmentedChain(comparisonPrompt, true); // use web for comparison insights
 const investmentChain = createAugmentedChain(investmentPrompt, true); // Use web for investment trends
 const marketChain = createAugmentedChain(marketPrompt, true); // Use web for market insights
@@ -911,6 +956,18 @@ switch(questionType.trim().toUpperCase()) {
     };
     logPromptData('comparison', comparisonPromptData);
     response = await comparisonChain.invoke(comparisonPromptData);
+    break;
+
+  case "COMPLEX_FACT":
+    contextData = await fetchFactData(property);
+    const complexFactPromptData = {
+      ...basePromptData,
+      yearlyRents: JSON.stringify(contextData.yearlyRents || {}),
+      yearlyGrades: JSON.stringify(contextData.yearlyGrades || {}),
+      yearlyPricePositions: JSON.stringify(contextData.yearlyPricePositions || {})
+    };
+    logPromptData('complex_fact', complexFactPromptData);
+    response = await complexFactChain.invoke(complexFactPromptData);
     break;
     
   case "INVESTMENT":

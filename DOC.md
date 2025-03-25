@@ -24,6 +24,7 @@ const classifierPrompt = PromptTemplate.fromTemplate(`
   
   Into one of these exact categories:
   - FACT: Simple factual questions about property details, location, or features
+  - COMPLEX_FACT: Detailed factual questions that may require external information or research
   - COMPARISON: Questions comparing this property to others in the market/area
   - INVESTMENT: Questions about investment potential, ROI, or value
   - MARKET: Questions about market trends, predictions, or conditions
@@ -72,6 +73,49 @@ const factPrompt = PromptTemplate.fromTemplate(`
   Do not provide analysis or comparisons unless specifically asked.
   
   Just state the fact and stop. No additional context needed.
+`);
+
+const complexFactPrompt = PromptTemplate.fromTemplate(`
+  You are providing detailed factual information about a property using both internal database and web search.
+  
+  PROPERTY INFORMATION:
+  Name: {name}
+  Address: {address}
+  City: {city}
+  State: {state}
+  Year Built: {yearBuilt}
+  Units: {units}
+  Levels: {levels}
+  Submarket: {submarket}
+  
+  PROPERTY RENT HISTORY:
+  {yearlyRents}
+  
+  COMPLEX FACTUAL QUESTION: {question}
+  
+  INSTRUCTIONS:
+  1. First check the internal database information provided
+  2. If the question cannot be fully answered with the internal data, use web search to find the necessary information
+  3. For web searches, consider using queries like:
+     - "{name} {address} property details"
+     - "{name} {city} real estate facts"
+     - "{submarket} {city} property information"
+  4. When you include information from web searches, provide a citation using the format: [Source name](URL)
+  
+  Give a comprehensive but concise answer to this factual question. 
+  Integrate information from both the database and web search (if needed).
+  
+  EXAMPLES:
+  
+  Question: What amenities does this property offer?
+  Answer:
+  The Woodlands at Main offers a premium amenity package including a resort-style pool, 24-hour fitness center, pet park, and business center. The property also features EV charging stations and private garages for select units. [The Woodlands Official Site](https://www.woodlandsmain.com/amenities)
+  
+  Question: What school districts serve this property?
+  Answer:
+  The Ridgeline Apartments are served by the Leander Independent School District. Specifically, children at this address attend River Ridge Elementary School (K-5), Canyon Ridge Middle School (6-8), and Vista Ridge High School (9-12). [Leander ISD](https://www.leanderisd.org/schools)
+  
+  Now, provide a factual answer to this question about {name}: {question}
 `);
 
 const comparisonPrompt = PromptTemplate.fromTemplate(`
@@ -370,6 +414,7 @@ GitHub Copilot was extensively used for both code generation and debugging:
 1. **Function Implementation**: Copilot helped implement complex data processing functions by understanding requirements expressed in natural language. Example prompts included:
    - "Implement a function that would take a dataframe with columns {property_id, year, rent, grade} and return a dataframe with yearly_averages"
    - "Create a data transformation that converts the nested grade history into a year-over-year comparison"
+   - "Implement a function in javascript to connect to SupaBase client and fetch from rent_growth table where submarket is equal to property submarket
 
 2. **Debugging Assistance**: When facing issues with database queries or component rendering, Copilot helped diagnose and resolve problems:
    - "Why is my submarket_grade query returning null despite the property name existing in the database?"
