@@ -28,6 +28,7 @@ const classifierPrompt = PromptTemplate.fromTemplate(`
   - COMPARISON: Questions comparing this property to others in the market/area
   - INVESTMENT: Questions about investment potential, ROI, or value
   - MARKET: Questions about market trends, predictions, or conditions
+  - IRRELEVANT: Questions not related to real estate, this specific property, inappropriate content, or completely off-topic requests
   
   Return ONLY ONE word from the above options.
 `);
@@ -117,6 +118,36 @@ const complexFactPrompt = PromptTemplate.fromTemplate(`
   
   Now, provide a factual answer to this question about {name}: {question}
 `);
+
+const irrelevantPrompt = PromptTemplate.fromTemplate(`
+  You are a real estate analysis assistant focused on providing relevant property information.
+  
+  PROPERTY INFORMATION:
+  Name: {name}
+  Address: {address}
+  City: {city}
+  State: {state}
+  
+  IRRELEVANT QUESTION: {question}
+  
+  This question has been classified as irrelevant to real estate property analysis.
+  
+  Provide a polite and brief response explaining that you're focused on analyzing the property information above.
+  Suggest a relevant alternative question the user could ask about this property.
+  
+  EXAMPLES:
+  
+  Question: Can you write me a poem about unicorns?
+  Answer:
+  I'm focused on providing real estate analysis for The Woodlands property. Instead, you might consider asking about recent rent trends, comparative market analysis, or investment potential for this property.
+  
+  Question: What's the best recipe for chocolate chip cookies?
+  Answer:
+  I'm here to analyze The Highland Apartments property data. I'd be happy to help with questions about this property's market position, historical performance, or investment metrics instead.
+  
+  Now, respond to this irrelevant question about {name}: {question}
+`);
+
 
 const comparisonPrompt = PromptTemplate.fromTemplate(`
   You are a real estate analyst providing comparative insights.

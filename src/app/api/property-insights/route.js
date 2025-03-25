@@ -38,6 +38,7 @@ const classifierPrompt = PromptTemplate.fromTemplate(`
   - COMPARISON: Questions comparing this property to others in the market/area
   - INVESTMENT: Questions about investment potential, ROI, or value
   - MARKET: Questions about market trends, predictions, or conditions
+  - IRRELEVANT: Questions not related to real estate, this specific property, inappropriate content, or completely off-topic requests
   
   Return ONLY ONE word from the above options.
 `);
@@ -878,6 +879,35 @@ const marketPrompt = PromptTemplate.fromTemplate(`
   Now, analyze the market conditions for {name} in {city}, {state}: {question}
 `);
 
+const irrelevantPrompt = PromptTemplate.fromTemplate(`
+  You are a real estate analysis assistant focused on providing relevant property information.
+  
+  PROPERTY INFORMATION:
+  Name: {name}
+  Address: {address}
+  City: {city}
+  State: {state}
+  
+  IRRELEVANT QUESTION: {question}
+  
+  This question has been classified as irrelevant to real estate property analysis.
+  
+  Provide a polite and brief response explaining that you're focused on analyzing the property information above.
+  Suggest a relevant alternative question the user could ask about this property.
+  
+  EXAMPLES:
+  
+  Question: Can you write me a poem about unicorns?
+  Answer:
+  I'm focused on providing real estate analysis for The Woodlands property. Instead, you might consider asking about recent rent trends, comparative market analysis, or investment potential for this property.
+  
+  Question: What's the best recipe for chocolate chip cookies?
+  Answer:
+  I'm here to analyze The Highland Apartments property data. I'd be happy to help with questions about this property's market position, historical performance, or investment metrics instead.
+  
+  Now, respond to this irrelevant question about {name}: {question}
+`);
+
 // Step 4: Create the chains for each question type
 // Create chains with and without web search capability
 const factChain = createAugmentedChain(factPrompt, false); // Facts don't need web search
@@ -885,6 +915,7 @@ const complexFactChain = createAugmentedChain(complexFactPrompt, true); // Compl
 const comparisonChain = createAugmentedChain(comparisonPrompt, true); // use web for comparison insights
 const investmentChain = createAugmentedChain(investmentPrompt, true); // Use web for investment trends
 const marketChain = createAugmentedChain(marketPrompt, true); // Use web for market insights
+const irrelevantChain = createAugmentedChain(irrelevantPrompt, false); // No web search needed for irrelevant questions
 
 // Create the main handler
 export async function POST(request) {
@@ -997,6 +1028,15 @@ switch(questionType.trim().toUpperCase()) {
     };
     logPromptData('market', marketPromptData);
     response = await marketChain.invoke(marketPromptData);
+    break;
+  
+  case "IRRELEVANT":
+    // For irrelevant questions, we just need basic property info
+    const irrelevantPromptData = {
+      ...basePromptData
+    };
+    logPromptData('irrelevant', irrelevantPromptData);
+    response = await irrelevantChain.invoke(irrelevantPromptData);
     break;
     
   default:
