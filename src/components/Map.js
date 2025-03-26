@@ -9,6 +9,25 @@ const PropertyMap = () => {
   const mapRef = useRef(null);
   const popupRef = useRef(new mapboxgl.Popup({ closeButton: false }));
   const [state, setState] = useState('Texas'); // Default state
+  const [apiWarmedUp, setApiWarmedUp] = useState(false);
+
+  // Add this function to prewarm the API
+  const prewarmAPI = async () => {
+    try {
+      console.log("Prewarming property insights API...");
+      const startTime = Date.now();
+      
+      const response = await fetch('/api/property-insights');
+      const data = await response.json();
+      
+      console.log(`API prewarm completed in ${(Date.now() - startTime)/1000}s:`, data.status);
+      setApiWarmedUp(true);
+    } catch (error) {
+      console.error("API prewarm failed:", error);
+      // Still set as warmed up to prevent infinite retries
+      setApiWarmedUp(true);
+    }
+  };
   
   // Define state-specific map configurations
   const stateConfigs = {
@@ -253,6 +272,9 @@ const PropertyMap = () => {
 
     // When the map has loaded
     mapRef.current.on('load', () => {
+
+      prewarmAPI();
+
       // Add your tileset as a source
       mapRef.current.addSource('properties', {
         type: 'vector',

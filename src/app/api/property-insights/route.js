@@ -1084,6 +1084,52 @@ switch(questionType.trim().toUpperCase()) {
   }
 }
 
+
+// Add at the bottom of the file after your POST handler
+
+// Keep-warm function to prevent cold starts and pre-initialize web search
+export async function GET() {
+  try {
+    console.log("Prewarming property-insights API");
+    
+    // Prepare a simple warmup prompt for the classification model
+    await classifierLLM.invoke("Classify this warmup text");
+    
+    // Initialize the main model
+    await llm.invoke("Give me analysis on leasup market in Texas and Ohio");
+    
+    // Initialize the web search model with a minimal query - this is the critical part
+    // We'll use a timeout to prevent hanging
+    const webSearchPromise = webSearchEnabledLLM.invoke({
+      content: "Initialize web search capabilities for property analysis"
+    });
+    
+    // Only wait 5 seconds max for web search warmup - this prevents deployment from timing out
+    const webSearchResult = await Promise.race([
+      webSearchPromise,
+      new Promise((resolve) => setTimeout(() => resolve({ status: "timeout" }), 5000))
+    ]);
+    
+    console.log("API prewarm complete, web search status:", 
+      webSearchResult.status || "initialized");
+    
+    return new Response(JSON.stringify({ 
+      status: "ready",
+      message: "Property insights API is warmed up and ready for queries"
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('API warmup error:', error);
+    return new Response(JSON.stringify({ 
+      status: "partially-initialized",
+      error: error.message
+    }), {
+      status: 200, // Still return 200 to prevent deployment errors
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
 // Add this logging helper at the top of your file, just below your imports
 
 // Helper function to log data while handling large objects with circular references
