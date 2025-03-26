@@ -2,7 +2,7 @@
 
 ## AI Architecture Overview
 
-The Affinius Dashboard leverages a sophisticated AI system for property analysis, built around a multi-agent prompting architecture that specializes in different types of real estate inquiries. The system processes natural language questions about properties and generates detailed, structured insights using both historical property data and augmented web search capabilities.
+The Affinius Dashboard leverages a sophisticated AI system powered with Retrieval Augment Genearation (RAG) for property analysis, built around a multi-agent prompting architecture that specializes in different types of real estate inquiries. The system processes natural language questions about properties and generates detailed, structured insights using both historical property data and augmented web search capabilities.
 
 ## Core AI Components
 
@@ -34,7 +34,7 @@ const classifierPrompt = PromptTemplate.fromTemplate(`
 `);
 ```
 
-### 2. Specialized Data Retrieval
+### 2. Specialized Data Retrieval (RAG)
 
 Each question type triggers a specific data retrieval strategy that fetches onlly the data relevant to answering that particular question type: 
 
@@ -44,6 +44,8 @@ Each question type triggers a specific data retrieval strategy that fetches onll
 - **fetchMarketData()**: Assembles market trend data including rent growth, grade distribution, and market conditions
 
 This targeted approach ensures the LLM receives the most relevant context while minimizing token usage.
+
+The data used is exporeted at the end of Task 1 and is uploaded to supabase as a postgres database that is queried by the app to retieval relevant data, like rent growth, grade class and property details. 
 
 ### 3. Specialized Prompts
 
@@ -433,6 +435,32 @@ The system implements graceful degradation through data fallbacks - for example,
 <br/><br/>
 <br/><br/>
 
+# MapBox Implementation
+
+I used the MapBox API to visualize properties on an interactive map. The implementation includes several advanced features to enhance user experience and performance:
+
+## Map Configuration & Data Visualization
+
+1. **Tileset Creation**: I  uploaded the property dataset with longitude and latitude to MapBox Studio as a custom tileset, creating dedicated tilesets for different markets (Texas and Ohio).
+
+2. **State-Specific Configuration**: The application supports multiple state markets with a toggle interface that dynamically adjusts map center, zoom levels, and data sources:
+
+   ```javascript
+   const stateConfigs = {
+     Texas: {
+       center: [-97.7431, 30.2672],
+       zoom: 9,
+       tilesetId: process.env.NEXT_PUBLIC_TX_MAPBOX,
+       sourceLayer: 'Texas_mapbox-a84j0i',
+     },
+     Ohio: {
+       center: [-81.5188, 41.0812],
+       zoom: 9,
+       tilesetId: process.env.NEXT_PUBLIC_OH_MAPBOX,
+       sourceLayer: 'Ohio_mapbox-5pn39x',
+     }
+   };
+   ```
 
 # GenAI tools used 
 
